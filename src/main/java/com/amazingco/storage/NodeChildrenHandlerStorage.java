@@ -1,8 +1,8 @@
-package com.amazingco.builder;
+package com.amazingco.storage;
 
 import java.math.BigInteger;
 
-public interface NodeChildrenStorage {
+public interface NodeChildrenHandlerStorage {
      BigInteger[] get();
      void store(BigInteger[] handler);
 }

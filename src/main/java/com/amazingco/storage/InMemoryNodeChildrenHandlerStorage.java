@@ -1,8 +1,8 @@
-package com.amazingco.builder;
+package com.amazingco.storage;
 
 import java.math.BigInteger;
 
-public class InMemoryNodeChildrenHandlerStorage implements NodeChildrenStorage {
+public class InMemoryNodeChildrenHandlerStorage implements NodeChildrenHandlerStorage {
 
     private BigInteger[] nodeChildIndexes;
 
