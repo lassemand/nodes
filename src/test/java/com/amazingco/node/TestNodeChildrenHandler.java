@@ -2,13 +2,14 @@ package com.amazingco.node;
 
 import com.amazingco.NodeChildrenHandler;
 import com.amazingco.model.Node;
-import com.amazingco.storage.InMemoryNodeChildrenHandlerStorage;
 import com.amazingco.storage.NodeChildrenHandlerStorage;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
 import java.math.BigInteger;
+import java.util.Arrays;
+import java.util.List;
 
 public class TestNodeChildrenHandler {
 
@@ -30,44 +31,59 @@ public class TestNodeChildrenHandler {
    }
 
     @Test
-    public void getNodeChildrenIndexes() {
-        BigInteger[] childrenIndexes = sut.getNodeChildrenIndexes();
-        Assert.assertNotNull(childrenIndexes);
-        Assert.assertEquals(BigInteger.ZERO, childrenIndexes[0]);
-        Assert.assertEquals(BigInteger.ONE, childrenIndexes[1]);
-        Assert.assertEquals(BigInteger.valueOf(3), childrenIndexes[2]);
-        Assert.assertEquals(BigInteger.ZERO, childrenIndexes[3]);
-        Assert.assertEquals(BigInteger.ZERO, childrenIndexes[4]);
-        Assert.assertEquals(BigInteger.valueOf(15), childrenIndexes[5]);
-        int target = (int) (Math.pow(2, 6) - 1);
-        Assert.assertEquals(BigInteger.valueOf(target), childrenIndexes[6]);
-        Assert.assertEquals(1, mock.getCounter);
-        Assert.assertEquals(1, mock.storeCounter);
-        sut.getNodeChildrenIndexes();
-        Assert.assertEquals(1, mock.getCounter);
-        Assert.assertEquals(1, mock.storeCounter);
+    public void getNodeChildren() throws InterruptedException {
+        List<Node> nodes = sut.getNodeChildren(4);
+        Assert.assertEquals(2, nodes.size());
+        Assert.assertTrue(nodes.contains(new Node(5)));
+        Assert.assertTrue(nodes.contains(new Node(6)));
     }
 
-   @Test
-   public void updateNodeChildIndexes() {
-       sut.updateNodeChildrenIndexes(5, 2);
-       BigInteger[] childrenIndexes = sut.getNodeChildrenIndexes();
-       Assert.assertNotNull(childrenIndexes);
-       Assert.assertEquals(BigInteger.ZERO, childrenIndexes[0]);
-       Assert.assertEquals(BigInteger.ONE, childrenIndexes[1]);
-       Assert.assertEquals(BigInteger.ZERO, childrenIndexes[2]);
-       Assert.assertEquals(BigInteger.ZERO, childrenIndexes[3]);
-       Assert.assertEquals(BigInteger.valueOf(3), childrenIndexes[4]);
-       Assert.assertEquals(BigInteger.valueOf(12), childrenIndexes[5]);
-       int target = (int) (Math.pow(2, 6) - 1);
-       Assert.assertEquals(BigInteger.valueOf(target), childrenIndexes[6]);
-       Assert.assertEquals(1, mock.getCounter);
-       Assert.assertEquals(1, mock.storeCounter);
-       sut.getNodeChildrenIndexes();
-       Assert.assertEquals(1, mock.getCounter);
-       Assert.assertEquals(1, mock.storeCounter);
+    @Test(expected = IndexOutOfBoundsException.class)
+    public void getNodeChildrenIndexesOutOfRange() throws InterruptedException {
+        sut.getNodeChildren(-1);
+        sut.getNodeChildren(7);
+    }
 
-   }
+    @Test
+    public void updateNodeChildren() throws InterruptedException {
+        sut.updateNodeChildrenIndexes(5, 0);
+        List<Node> nodes = sut.getNodeChildren(4);
+        Assert.assertEquals(0, nodes.size());
+        nodes = sut.getNodeChildren(0);
+        Assert.assertTrue(nodes.contains(new Node(5)));
+        Assert.assertTrue(nodes.contains(new Node(6)));
+    }
+
+    @Test
+    public void updateNodeChildrenSamePath() throws InterruptedException {
+        sut.updateNodeChildrenIndexes(5, 1);
+        List<Node> nodes = sut.getNodeChildren(4);
+        Assert.assertEquals(0, nodes.size());
+        nodes = sut.getNodeChildren(1);
+        Assert.assertEquals(4, nodes.size());
+        Assert.assertTrue(nodes.contains(new Node(3)));
+        Assert.assertTrue(nodes.contains(new Node(4)));
+        Assert.assertTrue(nodes.contains(new Node(5)));
+        Assert.assertTrue(nodes.contains(new Node(6)));
+    }
+
+    @Test
+    public void testPerformanceTonsOfNodes() throws InterruptedException {
+        Node[] nodes = buildTestNodes(10000);
+        sut = new NodeChildrenHandler(new NodeChildrenHandlerStorageMock(), nodes);
+        sut.updateNodeChildrenIndexes(5000, 9998);
+        List<Node> children = sut.getNodeChildren(5001);
+        Assert.assertEquals(0, children.size());
+    }
+
+    private Node[] buildTestNodes(int amount) {
+       Node[] nodes = new Node[amount];
+       for (int i = amount -1; i>=0; i--) {
+             nodes[i] = i == amount - 1 ? new Node(i) : new Node(i, nodes[i+1], nodes[amount - 1]);
+       }
+       return nodes;
+    }
+
 
    private class NodeChildrenHandlerStorageMock implements NodeChildrenHandlerStorage {
 

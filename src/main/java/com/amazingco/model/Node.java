@@ -34,4 +34,17 @@ public class Node {
         }
         return getParent().getHeight() + 1;
     }
+
+
+    @Override
+    public boolean equals(Object obj) {
+        if (obj instanceof Integer) {
+            return id == (int)obj;
+        }
+        if (!(obj instanceof Node)) {
+            return false;
+        }
+        Node node = (Node) obj;
+        return node.getId() == id;
+    }
 }

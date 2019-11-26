@@ -4,35 +4,53 @@ import com.amazingco.model.Node;
 import com.amazingco.storage.NodeChildrenHandlerStorage;
 
 import java.math.BigInteger;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
+import java.util.concurrent.Semaphore;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 public class NodeChildrenHandler {
 
     private Node[] nodes;
     private BigInteger[] nodeChildren;
-    private Map<Integer, Integer> idToIndex;
+    private IdToIndexConverter idToIndexConverter;
     private final NodeChildrenHandlerStorage nodeChildrenStorage;
+    private Semaphore semaphore = new Semaphore(1);
 
     public NodeChildrenHandler(NodeChildrenHandlerStorage nodeChildrenStorage, Node[] nodes) {
         Objects.requireNonNull(nodes);
         Objects.requireNonNull(nodeChildrenStorage);
         this.nodeChildrenStorage = nodeChildrenStorage;
         this.nodes = nodes;
-        this.idToIndex = buildIdToIndexes(nodes);
+        this.idToIndexConverter = new IdToIndexConverter(nodes);
+        this.nodeChildren = getNodeChildrenIndexes();
     }
 
-    private Map<Integer, Integer> buildIdToIndexes(Node[] nodes) {
-        Map<Integer, Integer> idToIndex = new HashMap<>();
-        for (int i = 0; i<nodes.length; i++) {
-            idToIndex.put(nodes[i].getId(), i);
+    public List<Node> getNodeChildren(int id) throws InterruptedException {
+        int index = idToIndexConverter.convert(id);
+        semaphore.acquire();
+        BigInteger indexes = nodeChildren[index];
+        semaphore.release();
+        BitSet bitIndexes = BitSet.valueOf(indexes.toByteArray());
+        IntStream stream = bitIndexes.stream();
+        return stream.mapToObj(x -> nodes[x]).collect(Collectors.toList());
+    }
+
+    public void updateNodeChildrenIndexes(int sourceId, int targetId) throws InterruptedException {
+        int sourceIndex = idToIndexConverter.convert(sourceId);
+        int targetIndex = idToIndexConverter.convert(targetId);
+        BigInteger sourceIndexes = nodeChildren[sourceIndex].xor(BigInteger.valueOf(2).pow(sourceIndex));
+        boolean isRoot = nodes[sourceIndex].getRoot().getId() == nodes[sourceIndex].getId();
+        semaphore.acquire();
+        if (!isRoot) {
+            int sourceParentIndex = idToIndexConverter.convert(nodes[sourceIndex].getParent().getId());
+            updateNodeChildrenIndexes(sourceIndexes, sourceParentIndex, targetIndex);
         }
-        return idToIndex;
+        updateNodeChildrenIndexes(sourceIndexes, targetIndex, sourceIndex);
+        semaphore.release();
     }
 
-    public BigInteger[] getNodeChildrenIndexes() {
+    private BigInteger[] getNodeChildrenIndexes() {
         boolean isCached = nodeChildren != null;
         if (isCached) {
             return nodeChildren;
@@ -47,18 +65,6 @@ public class NodeChildrenHandler {
         return nodeChildren;
     }
 
-    public synchronized void updateNodeChildrenIndexes(int sourceId, int targetId) {
-        nodeChildren = getNodeChildrenIndexes();
-        int sourceIndex = idToIndex.get(sourceId);
-        int targetIndex = idToIndex.get(targetId);
-        BigInteger sourceIndexes = nodeChildren[sourceIndex].xor(BigInteger.valueOf(2).pow(sourceIndex));
-        boolean isRoot = nodes[sourceIndex].getRoot().getId() == nodes[sourceIndex].getId();
-        if (!isRoot) {
-            int sourceParentIndex = idToIndex.get(nodes[sourceIndex].getParent().getId());
-            updateNodeChildrenIndexes(sourceIndexes, sourceParentIndex, targetIndex);
-        }
-        updateNodeChildrenIndexes(sourceIndexes, targetIndex, sourceIndex);
-    }
 
     private void updateNodeChildrenIndexes(BigInteger sourceIndexes, int index, int oppositeIndex) {
         boolean isCommonAncestor = nodeChildren[index].testBit(oppositeIndex);
@@ -67,8 +73,10 @@ public class NodeChildrenHandler {
 
         BigInteger newTargetIndexes = nodeChildren[index].xor(sourceIndexes);
         nodeChildren[index] = newTargetIndexes;
-        int parentIndex = idToIndex.get(nodes[index].getParent().getId());
-        updateNodeChildrenIndexes(sourceIndexes, parentIndex, oppositeIndex);
+        if (nodes[index].getRoot().getId() != nodes[index].getId()) {
+            int parentIndex = idToIndexConverter.convert(nodes[index].getParent().getId());
+            updateNodeChildrenIndexes(sourceIndexes, parentIndex, oppositeIndex);
+        }
     }
 
     private BigInteger[] createNodeChildrenIndexes(Node[] nodes) {
@@ -81,7 +89,7 @@ public class NodeChildrenHandler {
                 continue;
 
             BigInteger sourceIndexes = indexes[i].xor(BigInteger.valueOf(2).pow(i));
-            int parentIndex = idToIndex.get(nodes[i].getParent().getId());
+            int parentIndex = idToIndexConverter.convert(nodes[i].getParent().getId());
             indexes[parentIndex] = sourceIndexes.xor(indexes[parentIndex]);
         }
         return indexes;
