@@ -5,6 +5,7 @@ import com.amazingco.NodeChildrenHandler;
 public class Node {
 
     private int id;
+    private int height;
     private Node parent;
 
     public Node(int id, Node parent, Node root) {
@@ -32,12 +33,12 @@ public class Node {
     }
 
     public int getHeight() {
-        if (getId() == getRoot().getId()) {
-            return 0;
-        }
-        return getParent().getHeight() + 1;
+        return height;
     }
 
+    public void setHeight(int height) {
+        this.height = height;
+    }
 
     @Override
     public boolean equals(Object obj) {

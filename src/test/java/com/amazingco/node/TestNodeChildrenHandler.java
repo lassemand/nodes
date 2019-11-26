@@ -71,12 +71,13 @@ public class TestNodeChildrenHandler {
         sut.updateNodeChildrenIndexes(0, 1);
         List<Node> nodes = sut.getNodeChildren(1);
         Assert.assertEquals(1, nodes.get(2).getRoot().getRoot().getId());
+        //TODO
     }
 
     @Test
     public void updatesParent() throws InterruptedException {
         sut.updateNodeChildrenIndexes(5, 1);
-        List<Node> children = sut.getNodeChildren(0);
+        List<Node> children = sut.getNodeChildren(1);
         for (Node node: children) {
             if (node.getId() == 1) {
                 Assert.assertEquals(0, node.getParent().getId());
@@ -88,6 +89,25 @@ public class TestNodeChildrenHandler {
             }
             if (node.getId() == 6) {
                 Assert.assertEquals(5, node.getParent().getId());
+            }
+        }
+    }
+
+    @Test
+    public void updatesHeight() throws InterruptedException {
+        List<Node> children = sut.getNodeChildren(1);
+        for (Node node: children) {
+            if (node.getId() == 6) {
+                Assert.assertEquals(4, node.getHeight());
+            }
+            if (node.getId() == 5) {
+                Assert.assertEquals(3, node.getHeight());
+            }
+            if (node.getId() == 4) {
+                Assert.assertEquals(2, node.getHeight());
+            }
+            if (node.getId() == 3) {
+                Assert.assertEquals(2, node.getHeight());
             }
         }
     }
