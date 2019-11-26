@@ -16,6 +16,7 @@ public class NodeChildrenHandler {
     private IdToIndexConverter idToIndexConverter;
     private final NodeChildrenHandlerStorage nodeChildrenStorage;
     private Semaphore semaphore = new Semaphore(1);
+    public static Node root;
 
     public NodeChildrenHandler(NodeChildrenHandlerStorage nodeChildrenStorage, Node[] nodes) {
         Objects.requireNonNull(nodes);
@@ -42,6 +43,7 @@ public class NodeChildrenHandler {
         BigInteger sourceIndexes = nodeChildren[sourceIndex].xor(BigInteger.valueOf(2).pow(sourceIndex));
         boolean isRoot = nodes[sourceIndex].getRoot().getId() == nodes[sourceIndex].getId();
         semaphore.acquire();
+        nodes[sourceIndex].setParent(nodes[targetIndex]);
         if (!isRoot) {
             int sourceParentIndex = idToIndexConverter.convert(nodes[sourceIndex].getParent().getId());
             updateNodeChildrenIndexes(sourceIndexes, sourceParentIndex, targetIndex);
@@ -73,7 +75,8 @@ public class NodeChildrenHandler {
 
         BigInteger newTargetIndexes = nodeChildren[index].xor(sourceIndexes);
         nodeChildren[index] = newTargetIndexes;
-        if (nodes[index].getRoot().getId() != nodes[index].getId()) {
+        boolean isRoot = nodes[index].getRoot().getId() != nodes[index].getId();
+        if (isRoot) {
             int parentIndex = idToIndexConverter.convert(nodes[index].getParent().getId());
             updateNodeChildrenIndexes(sourceIndexes, parentIndex, oppositeIndex);
         }
@@ -85,9 +88,10 @@ public class NodeChildrenHandler {
         Arrays.fill(indexes, BigInteger.ZERO);
         for (int i = 0; i<nodes.length; i++) {
             boolean isRoot = nodes[i].getRoot().getId() == nodes[i].getId();
-            if (isRoot)
+            if (isRoot) {
+                root = nodes[i];
                 continue;
-
+            }
             BigInteger sourceIndexes = indexes[i].xor(BigInteger.valueOf(2).pow(i));
             int parentIndex = idToIndexConverter.convert(nodes[i].getParent().getId());
             indexes[parentIndex] = sourceIndexes.xor(indexes[parentIndex]);

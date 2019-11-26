@@ -1,19 +1,18 @@
 package com.amazingco.model;
 
+import com.amazingco.NodeChildrenHandler;
+
 public class Node {
 
     private int id;
     private Node parent;
-    private Node root;
 
     public Node(int id, Node parent, Node root) {
         this.id = id;
         this.parent = parent;
-        this.root = root;
     }
     public Node(int id) {
         this.id = id;
-        this.root = this;
     }
 
     public int getId() {
@@ -25,7 +24,11 @@ public class Node {
     }
 
     public Node getRoot() {
-        return root;
+        return NodeChildrenHandler.root;
+    }
+
+    public void setParent(Node parent) {
+        this.parent = parent;
     }
 
     public int getHeight() {

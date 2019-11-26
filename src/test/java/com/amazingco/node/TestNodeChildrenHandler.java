@@ -8,7 +8,6 @@ import org.junit.Before;
 import org.junit.Test;
 
 import java.math.BigInteger;
-import java.util.Arrays;
 import java.util.List;
 
 public class TestNodeChildrenHandler {
@@ -68,7 +67,33 @@ public class TestNodeChildrenHandler {
     }
 
     @Test
-    public void testPerformanceTonsOfNodes() throws InterruptedException {
+    public void updatesRoot() throws InterruptedException {
+        sut.updateNodeChildrenIndexes(0, 1);
+        List<Node> nodes = sut.getNodeChildren(1);
+        Assert.assertEquals(1, nodes.get(2).getRoot().getRoot().getId());
+    }
+
+    @Test
+    public void updatesParent() throws InterruptedException {
+        sut.updateNodeChildrenIndexes(5, 1);
+        List<Node> children = sut.getNodeChildren(0);
+        for (Node node: children) {
+            if (node.getId() == 1) {
+                Assert.assertEquals(0, node.getParent().getId());
+                continue;
+            }
+            if (node.getId() == 5) {
+                Assert.assertEquals(1, node.getParent().getId());
+                continue;
+            }
+            if (node.getId() == 6) {
+                Assert.assertEquals(5, node.getParent().getId());
+            }
+        }
+    }
+
+    @Test
+    public void performanceTonsOfNodes() throws InterruptedException {
         Node[] nodes = buildTestNodes(10000);
         sut = new NodeChildrenHandler(new NodeChildrenHandlerStorageMock(), nodes);
         sut.updateNodeChildrenIndexes(5000, 9998);
