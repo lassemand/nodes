@@ -2,7 +2,6 @@ package com.amazingco.node;
 
 import com.amazingco.NodeChildrenHandler;
 import com.amazingco.model.Node;
-import com.amazingco.storage.NodeStorage;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -11,7 +10,6 @@ import java.util.List;
 
 public class TestNodeChildrenHandler {
 
-    private NodeStorageMock mock;
     private NodeChildrenHandler sut;
 
    @Before
@@ -24,8 +22,7 @@ public class TestNodeChildrenHandler {
        Node node5 = new Node(5, 4);
        Node node6 = new Node(6, 5);
        Node[] nodes = new Node[]{node6, node5, node4, node3, node2, node1, root};
-       mock = new NodeStorageMock();
-       sut = new NodeChildrenHandler(mock, nodes, root);
+       sut = new NodeChildrenHandler(nodes, root);
    }
 
     @Test
@@ -114,7 +111,7 @@ public class TestNodeChildrenHandler {
     @Test
     public void performanceTonsOfNodes() throws InterruptedException {
         Node[] nodes = buildTestNodes(10000);
-        sut = new NodeChildrenHandler(new NodeStorageMock(), nodes, nodes[9999]);
+        sut = new NodeChildrenHandler(nodes, nodes[9999]);
         sut.updateNodeChildrenIndexes(5000, 9998);
         List<Node> children = sut.getNodeChildren(5001);
         Assert.assertEquals(0, children.size());
@@ -127,22 +124,4 @@ public class TestNodeChildrenHandler {
        }
        return nodes;
     }
-
-
-   private class NodeStorageMock implements NodeStorage {
-
-       int getCounter, storeCounter = 0;
-
-       @Override
-       public Node[] get() {
-           getCounter++;
-           return null;
-       }
-
-       @Override
-       public void store(Node[] handler) {
-           storeCounter++;
-       }
-   }
-
 }
