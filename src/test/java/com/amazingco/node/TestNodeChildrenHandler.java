@@ -17,12 +17,12 @@ public class TestNodeChildrenHandler {
    @Before
    public void setup() {
        Node root = new Node(0);
-       Node node1 = new Node(1, root, root);
-       Node node2 = new Node(2, root, root);
-       Node node3 = new Node(3, node1, root);
-       Node node4 = new Node(4, node1, root);
-       Node node5 = new Node(5, node4, root);
-       Node node6 = new Node(6, node5, root);
+       Node node1 = new Node(1, 0);
+       Node node2 = new Node(2, 0);
+       Node node3 = new Node(3, 1);
+       Node node4 = new Node(4, 1);
+       Node node5 = new Node(5, 4);
+       Node node6 = new Node(6, 5);
        Node[] nodes = new Node[]{node6, node5, node4, node3, node2, node1, root};
        mock = new NodeStorageMock();
        sut = new NodeChildrenHandler(mock, nodes, root);
@@ -79,15 +79,15 @@ public class TestNodeChildrenHandler {
         List<Node> children = sut.getNodeChildren(1);
         for (Node node: children) {
             if (node.getId() == 1) {
-                Assert.assertEquals(0, node.getParent().getId());
+                Assert.assertEquals(0, node.getParentId());
                 continue;
             }
             if (node.getId() == 5) {
-                Assert.assertEquals(1, node.getParent().getId());
+                Assert.assertEquals(1, node.getParentId());
                 continue;
             }
             if (node.getId() == 6) {
-                Assert.assertEquals(5, node.getParent().getId());
+                Assert.assertEquals(5, node.getParentId());
             }
         }
     }
@@ -123,7 +123,7 @@ public class TestNodeChildrenHandler {
     private Node[] buildTestNodes(int amount) {
        Node[] nodes = new Node[amount];
        for (int i = amount -1; i>=0; i--) {
-             nodes[i] = i == amount - 1 ? new Node(i) : new Node(i, nodes[i+1], nodes[amount - 1]);
+             nodes[i] = i == amount - 1 ? new Node(i) : new Node(i, nodes[i+1].getId());
        }
        return nodes;
     }

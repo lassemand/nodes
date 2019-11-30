@@ -55,7 +55,7 @@ public class NodeChildrenHandler {
         int height = 0;
         while(node.getId() != node.getRoot().getId()) {
             height++;
-            node = node.getParent();
+            node = nodes[idToIndexConverter.convert(node.getParentId())];
         }
         return height;
     }
@@ -73,13 +73,13 @@ public class NodeChildrenHandler {
         semaphore.acquire();
         boolean isSourceRoot = nodes[sourceIndex].getRoot().getId() == nodes[sourceIndex].getId();
         if (!isSourceRoot) {
-            int sourceParentIndex = idToIndexConverter.convert(nodes[sourceIndex].getParent().getId());
+            int sourceParentIndex = idToIndexConverter.convert(nodes[sourceIndex].getParentId());
             updateNodeChildrenIndexes(sourceIndexes, sourceParentIndex, targetIndex);
         } else {
             root = nodes[targetIndex];
         }
         updateNodeChildrenIndexes(sourceIndexes, targetIndex, sourceIndex);
-        nodes[sourceIndex].setParent(nodes[targetIndex]);
+        nodes[sourceIndex].setParentId(nodes[targetIndex].getId());
         nodeStorage.store(nodes);
         semaphore.release();
     }
@@ -99,16 +99,16 @@ public class NodeChildrenHandler {
                 notifyWaitingNodes(waitingNodes.getOrDefault(node.getId(), new ArrayList<>()), waitingNodes, nodeHeights);
                 continue;
             }
-            if (node.getParent().getId() == parentId) {
+            if (node.getParentId() == parentId) {
                 nodeHeights.put(node.getId(), parentHeight + 1);
                 notifyWaitingNodes(waitingNodes.getOrDefault(node.getId(), new ArrayList<>()), waitingNodes, nodeHeights);
-            } else if (nodeHeights.getOrDefault(node.getParent().getId(), -1) > 0) {
-                nodeHeights.put(node.getId(), nodeHeights.get(node.getParent().getId()) + 1);
+            } else if (nodeHeights.getOrDefault(node.getParentId(), -1) > 0) {
+                nodeHeights.put(node.getId(), nodeHeights.get(node.getParentId()) + 1);
                 notifyWaitingNodes(waitingNodes.getOrDefault(node.getId(), new ArrayList<>()), waitingNodes, nodeHeights);
             } else {
-                List<Node> waitingNode = waitingNodes.getOrDefault(node.getParent().getId(), new ArrayList<>());
+                List<Node> waitingNode = waitingNodes.getOrDefault(node.getParentId(), new ArrayList<>());
                 waitingNode.add(node);
-                waitingNodes.put(node.getParent().getId(), waitingNode);
+                waitingNodes.put(node.getParentId(), waitingNode);
             }
         }
         return nodeHeights;
@@ -119,7 +119,7 @@ public class NodeChildrenHandler {
         waitingNodesQueue.addFirst(nodes);
         while(!waitingNodesQueue.isEmpty()) {
             for (Node waitingNode: waitingNodesQueue.pop()) {
-                nodeHeights.put(waitingNode.getId(), nodeHeights.get(waitingNode.getParent().getId()) + 1);
+                nodeHeights.put(waitingNode.getId(), nodeHeights.get(waitingNode.getParentId()) + 1);
                 waitingNodesQueue.push(waitingNodes.getOrDefault(waitingNode.getId(), new ArrayList<>()));
             }
         }
@@ -134,7 +134,7 @@ public class NodeChildrenHandler {
         nodeChildren[index] = newTargetIndexes;
         boolean isRoot = nodes[index].getRoot().getId() != nodes[index].getId();
         if (isRoot) {
-            int parentIndex = idToIndexConverter.convert(nodes[index].getParent().getId());
+            int parentIndex = idToIndexConverter.convert(nodes[index].getParentId());
             updateNodeChildrenIndexes(sourceIndexes, parentIndex, oppositeIndex);
         }
     }
@@ -148,7 +148,7 @@ public class NodeChildrenHandler {
                 continue;
 
             BigInteger sourceIndexes = indexes[i].xor(BigInteger.valueOf(2).pow(i));
-            int parentIndex = idToIndexConverter.convert(nodes[i].getParent().getId());
+            int parentIndex = idToIndexConverter.convert(nodes[i].getParentId());
             indexes[parentIndex] = sourceIndexes.xor(indexes[parentIndex]);
         }
         return indexes;
