@@ -2,8 +2,8 @@ package com.amazingco;
 
 import com.amazingco.http.HttpMessageHandler;
 import com.amazingco.model.Node;
-import com.amazingco.storage.InMemoryNodeChildrenHandlerStorage;
-import com.amazingco.storage.NodeChildrenHandlerStorage;
+import com.amazingco.storage.InMemoryNodeStorage;
+import com.amazingco.storage.NodeStorage;
 
 import java.io.IOException;
 
@@ -18,8 +18,8 @@ public class Main {
         Node node5 = new Node(5, node4, root);
         Node node6 = new Node(6, node5, root);
         Node[] nodes = new Node[]{node6, node5, node4, node3, node2, node1, root};
-        NodeChildrenHandlerStorage storage = new InMemoryNodeChildrenHandlerStorage();
-        NodeChildrenHandler nodeChildrenHandler = new NodeChildrenHandler(storage, nodes);
+        NodeStorage storage = new InMemoryNodeStorage();
+        NodeChildrenHandler nodeChildrenHandler = new NodeChildrenHandler(storage, nodes, root);
         new HttpMessageHandler(8080, nodeChildrenHandler);
     }
 

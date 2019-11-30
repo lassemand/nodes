@@ -1,7 +1,7 @@
 package com.amazingco;
 
 import com.amazingco.model.Node;
-import com.amazingco.storage.NodeChildrenHandlerStorage;
+import com.amazingco.storage.NodeStorage;
 
 import java.math.BigInteger;
 import java.util.*;
@@ -14,17 +14,18 @@ public class NodeChildrenHandler {
     private Node[] nodes;
     private BigInteger[] nodeChildren;
     private IdToIndexConverter idToIndexConverter;
-    private final NodeChildrenHandlerStorage nodeChildrenStorage;
+    private final NodeStorage nodeStorage;
     private Semaphore semaphore = new Semaphore(1);
     public static Node root;
 
-    public NodeChildrenHandler(NodeChildrenHandlerStorage nodeChildrenStorage, Node[] nodes) {
+    public NodeChildrenHandler(NodeStorage nodeStorage, Node[] nodes, Node root) {
         Objects.requireNonNull(nodes);
-        Objects.requireNonNull(nodeChildrenStorage);
-        this.nodeChildrenStorage = nodeChildrenStorage;
-        this.nodes = nodes;
+        Objects.requireNonNull(nodeStorage);
+        this.nodeStorage = nodeStorage;
+        this.root = root;
+        this.nodes = sortByChildrenFirst(nodes, root);
         this.idToIndexConverter = new IdToIndexConverter(nodes);
-        this.nodeChildren = getNodeChildrenIndexes();
+        this.nodeChildren = createNodeChildrenIndexes(nodes);
     }
 
     /**
@@ -42,7 +43,11 @@ public class NodeChildrenHandler {
         BitSet bitIndexes = BitSet.valueOf(indexes.toByteArray());
         IntStream stream = bitIndexes.stream();
         List<Node> childNodes = stream.mapToObj(x -> nodes[x]).collect(Collectors.toList());
-        setHeight(childNodes, getHeightOfNode(nodes[index]), nodes[index].getId());
+        Node[] childNodesArray = new Node[childNodes.size()];
+        Map<Integer, Integer> heights = getHeights(childNodes.toArray(childNodesArray), getHeightOfNode(nodes[index]), id);
+        for (Node node: childNodes) {
+            node.setHeight(heights.get(node.getId()));
+        }
         return childNodes;
     }
 
@@ -75,6 +80,7 @@ public class NodeChildrenHandler {
         }
         updateNodeChildrenIndexes(sourceIndexes, targetIndex, sourceIndex);
         nodes[sourceIndex].setParent(nodes[targetIndex]);
+        nodeStorage.store(nodes);
         semaphore.release();
     }
 
@@ -84,52 +90,40 @@ public class NodeChildrenHandler {
      * @param parentHeight
      * @param parentId
      */
-    private void setHeight(List<Node> nodes, int parentHeight, int parentId) {
-        int[] nodeHeights = new int[this.nodes.length];
+    private Map<Integer, Integer> getHeights(Node[] nodes, int parentHeight, int parentId) {
+        Map<Integer, Integer> nodeHeights = new HashMap<>();
         Map<Integer, List<Node>> waitingNodes = new HashMap<>();
         for (Node node: nodes) {
-            int parentIndex = idToIndexConverter.convert(node.getParent().getId());
-            int index = idToIndexConverter.convert(node.getId());
+            if (node.getId() == root.getId()){
+                nodeHeights.put(node.getId(), 0);
+                notifyWaitingNodes(waitingNodes.getOrDefault(node.getId(), new ArrayList<>()), waitingNodes, nodeHeights);
+                continue;
+            }
             if (node.getParent().getId() == parentId) {
-                nodeHeights[index] = parentHeight + 1;
-                notifyWaitingNodes(waitingNodes.getOrDefault(index, new ArrayList<>()), waitingNodes, nodeHeights, nodeHeights[index]);
-            } else if (nodeHeights[parentIndex] > 0) {
-                nodeHeights[index] = nodeHeights[parentIndex] + 1;
-                notifyWaitingNodes(waitingNodes.getOrDefault(index, new ArrayList<>()), waitingNodes, nodeHeights, nodeHeights[index]);
+                nodeHeights.put(node.getId(), parentHeight + 1);
+                notifyWaitingNodes(waitingNodes.getOrDefault(node.getId(), new ArrayList<>()), waitingNodes, nodeHeights);
+            } else if (nodeHeights.getOrDefault(node.getParent().getId(), -1) > 0) {
+                nodeHeights.put(node.getId(), nodeHeights.get(node.getParent().getId()) + 1);
+                notifyWaitingNodes(waitingNodes.getOrDefault(node.getId(), new ArrayList<>()), waitingNodes, nodeHeights);
             } else {
-                List<Node> waitingNode = waitingNodes.getOrDefault(parentIndex, new ArrayList<>());
+                List<Node> waitingNode = waitingNodes.getOrDefault(node.getParent().getId(), new ArrayList<>());
                 waitingNode.add(node);
-                waitingNodes.put(parentIndex, waitingNode);
+                waitingNodes.put(node.getParent().getId(), waitingNode);
             }
         }
-        for (Node node: nodes) {
-            node.setHeight(nodeHeights[idToIndexConverter.convert(node.getId())]);
-        }
+        return nodeHeights;
     }
 
-    private void notifyWaitingNodes(List<Node> nodes, Map<Integer, List<Node>> waitingNodes, int[] nodeHeights, int nodeHeight) {
-        for (Node waitingNode: nodes) {
-            int index = idToIndexConverter.convert(waitingNode.getId());
-            nodeHeights[index] = nodeHeight + 1;
-            notifyWaitingNodes(waitingNodes.getOrDefault(index, new ArrayList<>()), waitingNodes, nodeHeights, nodeHeight + 1);
+    private void notifyWaitingNodes(List<Node> nodes, Map<Integer, List<Node>> waitingNodes, Map<Integer, Integer> nodeHeights) {
+        LinkedList<List<Node>> waitingNodesQueue = new LinkedList<>();
+        waitingNodesQueue.addFirst(nodes);
+        while(!waitingNodesQueue.isEmpty()) {
+            for (Node waitingNode: waitingNodesQueue.pop()) {
+                nodeHeights.put(waitingNode.getId(), nodeHeights.get(waitingNode.getParent().getId()) + 1);
+                waitingNodesQueue.push(waitingNodes.getOrDefault(waitingNode.getId(), new ArrayList<>()));
+            }
         }
     }
-
-    private BigInteger[] getNodeChildrenIndexes() {
-        boolean isCached = nodeChildren != null;
-        if (isCached) {
-            return nodeChildren;
-        }
-        BigInteger[] nodeChildrenIndexes = nodeChildrenStorage.get();
-        boolean isStored = nodeChildrenIndexes != null;
-        if (isStored) {
-            return nodeChildrenIndexes;
-        }
-        nodeChildren = createNodeChildrenIndexes(nodes);
-        nodeChildrenStorage.store(nodeChildren);
-        return nodeChildren;
-    }
-
 
     private void updateNodeChildrenIndexes(BigInteger sourceIndexes, int index, int oppositeIndex) {
         boolean isCommonAncestor = nodeChildren[index].testBit(oppositeIndex);
@@ -150,15 +144,40 @@ public class NodeChildrenHandler {
         BigInteger[] indexes = new BigInteger[nodes.length];
         Arrays.fill(indexes, BigInteger.ZERO);
         for (int i = 0; i<nodes.length; i++) {
-            boolean isRoot = nodes[i].getParent() == null;
-            if (isRoot) {
-                root = nodes[i];
+            if (root.equals(nodes[i]))
                 continue;
-            }
+
             BigInteger sourceIndexes = indexes[i].xor(BigInteger.valueOf(2).pow(i));
             int parentIndex = idToIndexConverter.convert(nodes[i].getParent().getId());
             indexes[parentIndex] = sourceIndexes.xor(indexes[parentIndex]);
         }
         return indexes;
+    }
+
+    private Node[] sortByChildrenFirst(Node[] nodes, Node root) {
+        if (nodes.length == 0) {
+            return nodes;
+        }
+        Map<Integer, Integer> heights = getHeights(nodes, 0, root.getId());
+        Map<Integer, List<Node>> nodeBuckets = new HashMap<>();
+        int maxHeight = 0;
+        for (Node node: nodes) {
+            if (node.getId() == root.getId())
+                continue;
+            int currentHeight = heights.get(node.getId());
+            if (maxHeight < currentHeight)
+                maxHeight = currentHeight;
+
+            List<Node> bucket = nodeBuckets.getOrDefault(currentHeight, new ArrayList<>());
+            bucket.add(node);
+            nodeBuckets.put(currentHeight, bucket);
+        }
+        List<Node> combined = nodeBuckets.get(maxHeight);
+        for (int i = maxHeight - 1; i>=1; i--) {
+            combined.addAll(nodeBuckets.get(i));
+        }
+        combined.add(root);
+        Node[] result = new Node[combined.size() + 1];
+        return combined.toArray(result);
     }
 }
