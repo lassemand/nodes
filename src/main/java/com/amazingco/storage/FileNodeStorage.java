@@ -1,5 +1,6 @@
 package com.amazingco.storage;
 
+import com.amazingco.model.Backup;
 import com.amazingco.model.Node;
 import com.amazingco.serialization.Serializer;
 
@@ -16,14 +17,13 @@ public class FileNodeStorage implements NodeStorage {
     }
 
     @Override
-    public void store(Node[] nodes) throws IOException {
-        Objects.requireNonNull(nodes);
+    public synchronized void store(Node[] nodes) throws IOException {
         FileOutputStream stream = new FileOutputStream(path);
         Serializer.serialize(stream, nodes);
     }
 
     @Override
-    public Node[] get() throws IOException {
+    public Backup get() throws IOException {
         FileInputStream stream = new FileInputStream(path);
         return Serializer.deserializeNodes(stream);
     }

@@ -1,5 +1,6 @@
 package com.amazingco.node;
 
+import com.amazingco.model.Backup;
 import com.amazingco.model.Node;
 import com.amazingco.serialization.Serializer;
 import org.junit.Assert;
@@ -26,8 +27,8 @@ public class TestSerializer {
         byte[] result = out.toByteArray();
         Assert.assertEquals(1, result.length);
         Assert.assertEquals(0, result[0]);
-        Node[] deserializedNodes = Serializer.deserializeNodes(new ByteArrayInputStream(result));
-        Assert.assertArrayEquals(nodes, deserializedNodes);
+        Backup backup = Serializer.deserializeNodes(new ByteArrayInputStream(result));
+        Assert.assertArrayEquals(nodes, backup.getNodes());
     }
 
     @Test
@@ -38,8 +39,8 @@ public class TestSerializer {
         byte[] result = out.toByteArray();
         Assert.assertEquals(3, result.length);
         Assert.assertArrayEquals(new byte[]{2, 2, 20}, result);
-        Node[] deserializedNodes = Serializer.deserializeNodes(new ByteArrayInputStream(result));
-        Assert.assertArrayEquals(nodes, deserializedNodes);
+        Backup backup = Serializer.deserializeNodes(new ByteArrayInputStream(result));
+        Assert.assertArrayEquals(nodes, backup.getNodes());
     }
 
     @Test
@@ -50,8 +51,9 @@ public class TestSerializer {
         byte[] result = out.toByteArray();
         Assert.assertEquals(3, result.length);
         Assert.assertArrayEquals(new byte[]{2, 2, 1}, result);
-        Node[] deserializedNodes = Serializer.deserializeNodes(new ByteArrayInputStream(result));
-        Assert.assertArrayEquals(nodes, deserializedNodes);
+        Backup backup = Serializer.deserializeNodes(new ByteArrayInputStream(result));
+        Assert.assertArrayEquals(nodes, backup.getNodes());
+        Assert.assertEquals(1, backup.getRoot().getId());
     }
 
    @Test
@@ -62,8 +64,8 @@ public class TestSerializer {
        byte[] result = out.toByteArray();
        Assert.assertEquals(7, result.length);
        Assert.assertArrayEquals(new byte[]{6, 2, 1, 2, 10, 10, 6}, result);
-       Node[] deserializedNodes = Serializer.deserializeNodes(new ByteArrayInputStream(result));
-       Assert.assertArrayEquals(nodes, deserializedNodes);
+       Backup backup = Serializer.deserializeNodes(new ByteArrayInputStream(result));
+       Assert.assertArrayEquals(nodes, backup.getNodes());
    }
 
 }

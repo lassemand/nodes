@@ -13,7 +13,7 @@ public class NodeChildrenHandler {
     private BigInteger[] nodeChildren;
     private IdToIndexConverter idToIndexConverter;
     private Semaphore semaphore = new Semaphore(1);
-    public static Node root;
+    private Node root;
 
     public NodeChildrenHandler(Node[] nodes, Node root) {
         Objects.requireNonNull(nodes);
@@ -173,5 +173,13 @@ public class NodeChildrenHandler {
         combined.add(root);
         Node[] result = new Node[combined.size() + 1];
         return combined.toArray(result);
+    }
+
+    public Node[] getNodes() {
+        return nodes;
+    }
+
+    public Node getRoot() {
+        return root;
     }
 }

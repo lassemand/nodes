@@ -1,5 +1,6 @@
 package com.amazingco.node;
 
+import com.amazingco.model.Backup;
 import com.amazingco.model.Node;
 import com.amazingco.storage.FileNodeStorage;
 import org.junit.Assert;
@@ -20,11 +21,11 @@ public class TestFileNodeStorage {
         File file = folder.newFile();
         FileNodeStorage initial = new FileNodeStorage(file.getPath());
         initial.store(new Node[]{new Node(11)});
-        Node[] firstNodes = initial.get();
-        Assert.assertEquals(1, firstNodes.length);
-        Assert.assertEquals(11, firstNodes[0].getId());
-        Node[] secondNodes = new FileNodeStorage(file.getPath()).get();
-        Assert.assertEquals(1, secondNodes.length);
-        Assert.assertEquals(11, secondNodes[0].getId());
+        Backup backup = initial.get();
+        Assert.assertEquals(1, backup.getNodes().length);
+        Assert.assertEquals(11, backup.getNodes()[0].getId());
+        Backup secondBackup = new FileNodeStorage(file.getPath()).get();
+        Assert.assertEquals(1, secondBackup.getNodes().length);
+        Assert.assertEquals(11, secondBackup.getNodes()[0].getId());
     }
 }

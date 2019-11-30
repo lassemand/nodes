@@ -1,8 +1,8 @@
 package com.amazingco.serialization;
 
+import com.amazingco.model.Backup;
 import com.amazingco.model.Node;
 
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -26,13 +26,13 @@ public class Serializer {
         out.write((byte)value);
     }
 
-    public static void serialize(OutputStream out, Node[] values) throws IOException {
-        Objects.requireNonNull(values);
-        serialize(out, values.length);
-        for(int i = 0; i < values.length; ++i) {
-            serialize(out, values[i].getId());
-            serialize(out, values[i].getParentId());
-            out.write(values[i].serialize());
+    public static void serialize(OutputStream out, Node[] nodes) throws IOException {
+        Objects.requireNonNull(nodes);
+        serialize(out, nodes.length);
+        for(int i = 0; i < nodes.length; ++i) {
+            serialize(out, nodes[i].getId());
+            serialize(out, nodes[i].getParentId());
+            out.write(nodes[i].serialize());
         }
     }
 
@@ -40,15 +40,21 @@ public class Serializer {
         return value >>> 1 ^ -(value & 1);
     }
 
-    public static Node[] deserializeNodes(InputStream in) throws IOException {
+    public static Backup deserializeNodes(InputStream in) throws IOException {
         int len = deserializeInt(in);
         Node[] nodes = new Node[len];
+        Node root = null;
         for (int i = 0; i<len; i++) {
             int id = deserializeInt(in);
             int parentId = deserializeInt(in);
+            if (parentId == -1) {
+                nodes[i] = new Node(id);
+                root = nodes[i];
+                continue;
+            }
             nodes[i] = new Node(id, parentId);
         }
-        return nodes;
+        return new Backup(root, nodes);
     }
 
     private static int readInt(InputStream in) throws IOException {
