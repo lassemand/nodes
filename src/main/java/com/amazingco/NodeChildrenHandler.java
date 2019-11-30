@@ -3,6 +3,7 @@ package com.amazingco;
 import com.amazingco.model.Node;
 import com.amazingco.storage.NodeStorage;
 
+import java.io.IOException;
 import java.math.BigInteger;
 import java.util.*;
 import java.util.concurrent.Semaphore;
@@ -14,14 +15,11 @@ public class NodeChildrenHandler {
     private Node[] nodes;
     private BigInteger[] nodeChildren;
     private IdToIndexConverter idToIndexConverter;
-    private final NodeStorage nodeStorage;
     private Semaphore semaphore = new Semaphore(1);
     public static Node root;
 
-    public NodeChildrenHandler(NodeStorage nodeStorage, Node[] nodes, Node root) {
+    public NodeChildrenHandler(Node[] nodes, Node root) {
         Objects.requireNonNull(nodes);
-        Objects.requireNonNull(nodeStorage);
-        this.nodeStorage = nodeStorage;
         this.root = root;
         this.nodes = sortByChildrenFirst(nodes, root);
         this.idToIndexConverter = new IdToIndexConverter(nodes);
@@ -53,7 +51,7 @@ public class NodeChildrenHandler {
 
     private int getHeightOfNode(Node node) {
         int height = 0;
-        while(node.getId() != node.getRoot().getId()) {
+        while(node.getId() != root.getId()) {
             height++;
             node = nodes[idToIndexConverter.convert(node.getParentId())];
         }
@@ -71,7 +69,7 @@ public class NodeChildrenHandler {
         int targetIndex = idToIndexConverter.convert(targetId);
         BigInteger sourceIndexes = nodeChildren[sourceIndex].xor(BigInteger.valueOf(2).pow(sourceIndex));
         semaphore.acquire();
-        boolean isSourceRoot = nodes[sourceIndex].getRoot().getId() == nodes[sourceIndex].getId();
+        boolean isSourceRoot = root.getId() == nodes[sourceIndex].getId();
         if (!isSourceRoot) {
             int sourceParentIndex = idToIndexConverter.convert(nodes[sourceIndex].getParentId());
             updateNodeChildrenIndexes(sourceIndexes, sourceParentIndex, targetIndex);
@@ -80,7 +78,6 @@ public class NodeChildrenHandler {
         }
         updateNodeChildrenIndexes(sourceIndexes, targetIndex, sourceIndex);
         nodes[sourceIndex].setParentId(nodes[targetIndex].getId());
-        nodeStorage.store(nodes);
         semaphore.release();
     }
 
@@ -132,7 +129,7 @@ public class NodeChildrenHandler {
 
         BigInteger newTargetIndexes = nodeChildren[index].xor(sourceIndexes);
         nodeChildren[index] = newTargetIndexes;
-        boolean isRoot = nodes[index].getRoot().getId() != nodes[index].getId();
+        boolean isRoot = root.getId() != nodes[index].getId();
         if (isRoot) {
             int parentIndex = idToIndexConverter.convert(nodes[index].getParentId());
             updateNodeChildrenIndexes(sourceIndexes, parentIndex, oppositeIndex);

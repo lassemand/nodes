@@ -28,10 +28,6 @@ public class Node {
         return parentId;
     }
 
-    public Node getRoot() {
-        return NodeChildrenHandler.root;
-    }
-
     public void setParentId(int parentId) {
         this.parentId = parentId;
     }

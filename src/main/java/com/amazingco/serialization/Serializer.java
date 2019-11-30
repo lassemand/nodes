@@ -3,13 +3,14 @@ package com.amazingco.serialization;
 import com.amazingco.model.Node;
 
 import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.util.Objects;
 
 public class Serializer {
 
-    public static void serialize(ByteArrayOutputStream out, int value) {
+    public static void serialize(OutputStream out, int value) throws IOException {
         writeInt(out, encodeZigZag(value));
     }
 
@@ -17,7 +18,7 @@ public class Serializer {
         return value << 1 ^ value >> 31;
     }
 
-    private static void writeInt(ByteArrayOutputStream out, int value) {
+    private static void writeInt(OutputStream out, int value) throws IOException {
         while((value & -128) != 0) {
             out.write((byte)(value & 127 | 128));
             value >>>= 7;
@@ -25,7 +26,7 @@ public class Serializer {
         out.write((byte)value);
     }
 
-    public static void serialize(ByteArrayOutputStream out, Node[] values) throws IOException {
+    public static void serialize(OutputStream out, Node[] values) throws IOException {
         Objects.requireNonNull(values);
         serialize(out, values.length);
         for(int i = 0; i < values.length; ++i) {
@@ -39,7 +40,7 @@ public class Serializer {
         return value >>> 1 ^ -(value & 1);
     }
 
-    public static Node[] deserializeNodes(ByteArrayInputStream in) throws IOException {
+    public static Node[] deserializeNodes(InputStream in) throws IOException {
         int len = deserializeInt(in);
         Node[] nodes = new Node[len];
         for (int i = 0; i<len; i++) {
@@ -50,7 +51,7 @@ public class Serializer {
         return nodes;
     }
 
-    private static int readInt(ByteArrayInputStream in) throws IOException {
+    private static int readInt(InputStream in) throws IOException {
         int result = 0;
         for(int shift = 0; shift < 32 && in.available() >= 1; shift += 7) {
             byte b = (byte)in.read();
@@ -62,7 +63,7 @@ public class Serializer {
         throw new IOException("Error decoding integer value");
     }
 
-    public static int deserializeInt(ByteArrayInputStream in) throws IOException {
+    public static int deserializeInt(InputStream in) throws IOException {
         return decodeZigZag(readInt(in));
     }
 }
