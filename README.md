@@ -82,6 +82,10 @@ operation has to update all the nodes until some common ancestor. However as the
 child nodes once a get operation is performed, the total cost is \BigTheta(|childNodes|) by using dynamic programming
 to update the height for all children. The common ancestor is found by getting the height up until the root.
 
+Even though the current requirements only support updating of data, it is trivial adding a new node.
+If a new node is added it only points to one parent, and no other nodes is children of the recently added node.
+Because the current model is made of big integers, the previous rows does not even have to be updated.
+
 #### Benchmarks
 
 The slowest updates is performed on a chain where each node is having on unique child. Using such structure with size 20000 the cpu time one 
