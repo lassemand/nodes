@@ -41,10 +41,10 @@ public class TestNodeChildrenHandler {
 
     @Test
     public void updateNodeChildren() throws InterruptedException {
-        sut.updateNodeChildrenIndexes(5, 0);
+        sut.updateNodeChildrenIndexes(5, 2);
         List<Node> nodes = sut.getNodeChildren(4);
         Assert.assertEquals(0, nodes.size());
-        nodes = sut.getNodeChildren(0);
+        nodes = sut.getNodeChildren(2);
         Assert.assertTrue(nodes.contains(new Node(5)));
         Assert.assertTrue(nodes.contains(new Node(6)));
     }
@@ -66,8 +66,15 @@ public class TestNodeChildrenHandler {
     public void updatesRoot() throws InterruptedException {
         sut.updateNodeChildrenIndexes(0, 1);
         List<Node> nodes = sut.getNodeChildren(1);
-        //Assert.assertEquals(1, nodes.get(2).getRoot().getRoot().getId());
-        //TODO
+        Assert.assertEquals(1, sut.getRoot().getId());
+        boolean isFound = false;
+        for (Node node: nodes) {
+            if (node.getId() == 0) {
+                isFound = true;
+                break;
+            }
+        }
+        Assert.assertTrue(isFound);
     }
 
     @Test
@@ -110,8 +117,8 @@ public class TestNodeChildrenHandler {
 
     @Test
     public void performanceTonsOfNodes() throws InterruptedException {
-        Node[] nodes = buildTestNodes(10000);
-        sut = new NodeChildrenHandler(nodes, nodes[9999]);
+        Node[] nodes = buildTestNodes(20000);
+        sut = new NodeChildrenHandler(nodes, nodes[19999]);
         sut.updateNodeChildrenIndexes(5000, 9998);
         List<Node> children = sut.getNodeChildren(5001);
         Assert.assertEquals(0, children.size());
@@ -120,7 +127,7 @@ public class TestNodeChildrenHandler {
     private Node[] buildTestNodes(int amount) {
        Node[] nodes = new Node[amount];
        for (int i = amount -1; i>=0; i--) {
-             nodes[i] = i == amount - 1 ? new Node(i) : new Node(i, nodes[i+1].getId());
+           nodes[i] = i == amount - 1 ? new Node(i) : new Node(i, nodes[i+1].getId());
        }
        return nodes;
     }

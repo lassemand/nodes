@@ -42,6 +42,7 @@ public class NodeChildrenHandler {
         Map<Integer, Integer> heights = getHeights(childNodes.toArray(childNodesArray), getHeightOfNode(nodes[index]), id);
         for (Node node: childNodes) {
             node.setHeight(heights.get(node.getId()));
+            node.setRootId(root.getId());
         }
         return childNodes;
     }
@@ -171,8 +172,7 @@ public class NodeChildrenHandler {
             combined.addAll(nodeBuckets.get(i));
         }
         combined.add(root);
-        Node[] result = new Node[combined.size() + 1];
-        return combined.toArray(result);
+        return combined.toArray(new Node[0]);
     }
 
     public Node[] getNodes() {

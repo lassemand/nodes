@@ -32,7 +32,6 @@ public class Serializer {
         for(int i = 0; i < nodes.length; ++i) {
             serialize(out, nodes[i].getId());
             serialize(out, nodes[i].getParentId());
-            out.write(nodes[i].serialize());
         }
     }
 

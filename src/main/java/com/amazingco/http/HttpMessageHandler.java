@@ -8,9 +8,7 @@ import com.amazingco.storage.NodeStorage;
 import com.google.gson.Gson;
 import fi.iki.elonen.NanoHTTPD;
 
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -29,6 +27,7 @@ public class HttpMessageHandler extends NanoHTTPD {
         start(NanoHTTPD.SOCKET_READ_TIMEOUT, false);
         this.nodeChildrenHandler = nodeChildrenHandler;
         this.storage = storage;
+        System.out.println("Server is started on port " + port);
     }
 
     @Override
@@ -57,6 +56,7 @@ public class HttpMessageHandler extends NanoHTTPD {
             }
             return newFixedLengthResponse(Response.Status.METHOD_NOT_ALLOWED, NanoHTTPD.MIME_PLAINTEXT, "Invalid method");
         } catch (Exception e) {
+            e.printStackTrace();
             return newFixedLengthResponse(Response.Status.BAD_REQUEST, NanoHTTPD.MIME_PLAINTEXT, e.getMessage());
         }
     }

@@ -1,15 +1,11 @@
 package com.amazingco.model;
 
-import com.amazingco.NodeChildrenHandler;
-import com.amazingco.serialization.Serializer;
-
-import java.io.ByteArrayOutputStream;
-
 public class Node {
 
     private int id;
     private int height;
     private int parentId;
+    private int rootId;
 
     public Node(int id, int parentId) {
         this.id = id;
@@ -22,6 +18,14 @@ public class Node {
 
     public int getId() {
         return id;
+    }
+
+    public int getRootId() {
+        return rootId;
+    }
+
+    public void setRootId(int rootId) {
+        this.rootId = rootId;
     }
 
     public int getParentId() {
@@ -51,11 +55,4 @@ public class Node {
         Node node = (Node) obj;
         return node.getId() == id;
     }
-
-    public byte[] serialize() {
-        ByteArrayOutputStream out = new ByteArrayOutputStream();
-
-        return out.toByteArray();
-    }
-
 }

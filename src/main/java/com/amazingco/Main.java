@@ -12,8 +12,6 @@ import java.io.IOException;
 
 public class Main {
 
-
-
     public static void main(String[] args) throws IOException {
         Configuration configuration = new Configuration();
         JCommander.newBuilder()
@@ -22,7 +20,7 @@ public class Main {
                 .parse(args);
         File f = new File(configuration.getBackupPath());
         NodeStorage storage = new FileNodeStorage(configuration.getBackupPath());
-        NodeChildrenHandler nodeChildrenHandler = null;
+        NodeChildrenHandler nodeChildrenHandler;
         if (f.exists()) {
             Backup backup = storage.get();
             nodeChildrenHandler = new NodeChildrenHandler(backup.getNodes(), backup.getRoot());
