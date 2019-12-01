@@ -19,8 +19,8 @@ public class NodeChildrenHandler {
         Objects.requireNonNull(nodes);
         this.root = root;
         this.nodes = sortByChildrenFirst(nodes, root);
-        this.idToIndexConverter = new IdToIndexConverter(nodes);
-        this.nodeChildren = createNodeChildrenIndexes(nodes);
+        this.idToIndexConverter = new IdToIndexConverter(this.nodes);
+        this.nodeChildren = createNodeChildrenIndexes(this.nodes);
     }
 
     /**

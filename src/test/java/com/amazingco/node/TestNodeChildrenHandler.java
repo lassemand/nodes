@@ -21,7 +21,7 @@ public class TestNodeChildrenHandler {
        Node node4 = new Node(4, 1);
        Node node5 = new Node(5, 4);
        Node node6 = new Node(6, 5);
-       Node[] nodes = new Node[]{node6, node5, node4, node3, node2, node1, root};
+       Node[] nodes = new Node[]{node2, node5, node4, node6, root, node3, node1};
        sut = new NodeChildrenHandler(nodes, root);
    }
 
