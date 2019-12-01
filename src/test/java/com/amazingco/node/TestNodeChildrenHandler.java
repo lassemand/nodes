@@ -1,6 +1,6 @@
 package com.amazingco.node;
 
-import com.amazingco.NodeChildrenHandler;
+import com.amazingco.handler.NodeChildrenHandler;
 import com.amazingco.model.Node;
 import org.junit.Assert;
 import org.junit.Before;

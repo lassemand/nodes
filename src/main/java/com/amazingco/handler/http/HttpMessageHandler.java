@@ -1,9 +1,6 @@
-package com.amazingco.http;
+package com.amazingco.handler.http;
 
-import com.amazingco.NodeChildrenHandler;
-import com.amazingco.model.Backup;
-import com.amazingco.model.Node;
-import com.amazingco.serialization.Serializer;
+import com.amazingco.handler.NodeChildrenHandler;
 import com.amazingco.storage.NodeStorage;
 import com.google.gson.Gson;
 import fi.iki.elonen.NanoHTTPD;

@@ -1,4 +1,4 @@
-package com.amazingco;
+package com.amazingco.model;
 
 import com.beust.jcommander.Parameter;
 

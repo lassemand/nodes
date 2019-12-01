@@ -1,7 +1,9 @@
 package com.amazingco;
 
-import com.amazingco.http.HttpMessageHandler;
+import com.amazingco.handler.NodeChildrenHandler;
+import com.amazingco.handler.http.HttpMessageHandler;
 import com.amazingco.model.Backup;
+import com.amazingco.model.Configuration;
 import com.amazingco.model.Node;
 import com.amazingco.storage.FileNodeStorage;
 import com.amazingco.storage.NodeStorage;
