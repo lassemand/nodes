@@ -35,7 +35,7 @@ public class NodeChildrenHandler {
         semaphore.acquire();
         BigInteger indexes = nodeChildren[index];
         semaphore.release();
-        BitSet bitIndexes = BitSet.valueOf(indexes.toByteArray());
+        BitSet bitIndexes = convertTo(indexes);
         IntStream stream = bitIndexes.stream();
         List<Node> childNodes = stream.mapToObj(x -> nodes[x]).collect(Collectors.toList());
         Node[] childNodesArray = new Node[childNodes.size()];
@@ -45,6 +45,21 @@ public class NodeChildrenHandler {
             node.setRootId(root.getId());
         }
         return childNodes;
+    }
+
+    private BitSet convertTo(BigInteger val) {
+        if(val.signum() < 0)
+            throw new IllegalArgumentException("Negative value: " + val);
+        return BitSet.valueOf(reverse(val.toByteArray()));
+    }
+
+    private byte[] reverse(byte[] bytes) {
+        for(int i = 0; i < bytes.length/2; i++) {
+            byte temp = bytes[i];
+            bytes[i] = bytes[bytes.length-i-1];
+            bytes[bytes.length-i-1] = temp;
+        }
+        return bytes;
     }
 
     private int getHeightOfNode(Node node) {
@@ -121,16 +136,13 @@ public class NodeChildrenHandler {
     }
 
     private void updateNodeChildrenIndexes(BigInteger sourceIndexes, int index, int oppositeIndex) {
-        boolean isCommonAncestor = nodeChildren[index].testBit(oppositeIndex);
-        if (isCommonAncestor)
-            return;
-
-        BigInteger newTargetIndexes = nodeChildren[index].xor(sourceIndexes);
-        nodeChildren[index] = newTargetIndexes;
-        boolean isRoot = root.getId() != nodes[index].getId();
-        if (isRoot) {
-            int parentIndex = idToIndexConverter.convert(nodes[index].getParentId());
-            updateNodeChildrenIndexes(sourceIndexes, parentIndex, oppositeIndex);
+        while (!nodeChildren[index].testBit(oppositeIndex)) {
+            BigInteger newTargetIndexes = nodeChildren[index].xor(sourceIndexes);
+            nodeChildren[index] = newTargetIndexes;
+            boolean isRoot = root.getId() == nodes[index].getId();
+            if (isRoot)
+                break;
+            index = idToIndexConverter.convert(nodes[index].getParentId());
         }
     }
 
@@ -149,6 +161,12 @@ public class NodeChildrenHandler {
         return indexes;
     }
 
+    /**
+     * Helper method to be able to built up the model faster
+     * @param nodes
+     * @param root
+     * @return
+     */
     private Node[] sortByChildrenFirst(Node[] nodes, Node root) {
         if (nodes.length == 0) {
             return nodes;

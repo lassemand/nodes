@@ -119,7 +119,10 @@ public class TestNodeChildrenHandler {
     public void performanceTonsOfNodes() throws InterruptedException {
         Node[] nodes = buildTestNodes(20000);
         sut = new NodeChildrenHandler(nodes, nodes[19999]);
-        sut.updateNodeChildrenIndexes(5000, 9998);
+        long start = System.nanoTime();
+        sut.updateNodeChildrenIndexes(5000, 19999);
+        long end = System.nanoTime();
+        System.out.println(end-start);
         List<Node> children = sut.getNodeChildren(5001);
         Assert.assertEquals(0, children.size());
     }

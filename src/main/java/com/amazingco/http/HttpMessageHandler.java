@@ -1,11 +1,13 @@
-package com.amazingco.handler.http;
+package com.amazingco.http;
 
 import com.amazingco.handler.NodeChildrenHandler;
+import com.amazingco.model.Node;
 import com.amazingco.storage.NodeStorage;
 import com.google.gson.Gson;
 import fi.iki.elonen.NanoHTTPD;
 
 import java.io.IOException;
+import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -37,7 +39,12 @@ public class HttpMessageHandler extends NanoHTTPD {
                 }
                 int id = Integer.parseInt(m.group(1));
                 Gson gson = new Gson();
-                String response = gson.toJson(nodeChildrenHandler.getNodeChildren(id));
+                long start = System.nanoTime();
+                List<Node> nodes = nodeChildrenHandler.getNodeChildren(id);
+                long middle = System.nanoTime();
+                String response = gson.toJson(nodes);
+                long end = System.nanoTime();
+                System.out.println("Getting nodes: " + (middle-start) + " serialization " + (end-middle));
                 return newFixedLengthResponse(Response.Status.OK, "application/json", response);
             }
             if (session.getMethod().equals(PUT)) {
@@ -47,8 +54,11 @@ public class HttpMessageHandler extends NanoHTTPD {
                 }
                 int sourceId = Integer.parseInt(m.group(1));
                 int targetId = Integer.parseInt(m.group(2));
+                long start = System.nanoTime();
                 nodeChildrenHandler.updateNodeChildrenIndexes(sourceId, targetId);
                 storage.store(nodeChildrenHandler.getNodes());
+                long end = System.nanoTime();
+                System.out.println(end-start);
                 return newFixedLengthResponse(Response.Status.NO_CONTENT, "", "");
             }
             return newFixedLengthResponse(Response.Status.METHOD_NOT_ALLOWED, NanoHTTPD.MIME_PLAINTEXT, "Invalid method");
